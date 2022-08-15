@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 
 import 'page.dart';
@@ -37,22 +39,8 @@ class _ListVideosPageState extends State<ListVideosPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> list = [];
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _fetchVideosFuture.then((data) {
-        for (var video in data) {
-          final ctr = VideoPlayerController.network(video.videoURL);
-          list = [
-            ...list,
-            {
-              "v": video,
-              "f": ctr.initialize(),
-              "c": ctr,
-            }
-          ];
-        }
-        return list;
-      }),
+    return FutureBuilder<List<Video>>(
+      future: _fetchVideosFuture,
       builder: ((context, snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.none:
@@ -76,6 +64,14 @@ class _ListVideosPageState extends State<ListVideosPage> {
             return ListView.builder(
                 itemCount: listVideos.length,
                 itemBuilder: ((context, index) {
+                  final chewieCtr = ChewieController(
+                    videoPlayerController: VideoPlayerController.network(listVideos[index].videoURL)..initialize(),
+                    deviceOrientationsOnEnterFullScreen: [
+                      DeviceOrientation.landscapeRight,
+                      DeviceOrientation.landscapeLeft,
+                    ],
+                    deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
+                  )..autoInitialize;
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,9 +82,9 @@ class _ListVideosPageState extends State<ListVideosPage> {
                         child: Stack(
                           children: [
                             Hero(
-                              tag: listVideos[index]["v"].id,
+                              tag: listVideos[index].id,
                               child: Image.network(
-                                listVideos[index]["v"].imgURL,
+                                listVideos[index].imgURL,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                               ),
@@ -104,13 +100,12 @@ class _ListVideosPageState extends State<ListVideosPage> {
                                         .push(
                                           MaterialPageRoute(
                                             builder: (context) => VideoPlayerPage(
-                                              video: listVideos[index]["v"],
-                                              videoPlayerCtrFuture: listVideos[index]["f"],
-                                              videoPlayerCtr: listVideos[index]["c"],
+                                              video: listVideos[index],
+                                              chewieCtr: chewieCtr,
                                             ),
                                           ),
                                         )
-                                        .then((value) => setState(() {})), // test ...
+                                        .then((value) => setState(() {})), // clear the detail screen when navigate pop
                                     icon: const Icon(
                                       Icons.play_arrow,
                                       color: Colors.white,
@@ -126,7 +121,7 @@ class _ListVideosPageState extends State<ListVideosPage> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0, left: 8.0, top: 8.0),
                         child: Text(
-                          listVideos[index]["v"].title,
+                          listVideos[index].title,
                           textAlign: TextAlign.start,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,

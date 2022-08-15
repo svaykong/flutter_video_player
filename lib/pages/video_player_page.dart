@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 
 import '../models/model.dart';
@@ -9,13 +7,11 @@ import '../utill/custom_extension.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final Video video;
-  final Future<void> videoPlayerCtrFuture;
-  final VideoPlayerController videoPlayerCtr;
+  final ChewieController chewieCtr;
   const VideoPlayerPage({
     Key? key,
     required this.video,
-    required this.videoPlayerCtrFuture,
-    required this.videoPlayerCtr,
+    required this.chewieCtr,
   }) : super(key: key);
 
   @override
@@ -23,39 +19,25 @@ class VideoPlayerPage extends StatefulWidget {
 }
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
-  late Future<void> _initializeVideoPlayerFuture;
-  late ChewieController _chewieCtr;
+  late Future<void> _future;
 
   @override
   void initState() {
     // call parent class initialize first before others initialize -> super.initState()
     super.initState();
 
-    // initialize videoPlayerController
-    _initializeVideoPlayerFuture = widget.videoPlayerCtrFuture;
+    _future = Future.delayed(const Duration(seconds: 5), () {
+      setState(() {});
 
-    // initialize ChewieController
-    _chewieCtr = ChewieController(
-      videoPlayerController: widget.videoPlayerCtr,
-      autoPlay: true,
-      looping: true,
-      deviceOrientationsOnEnterFullScreen: [
-        DeviceOrientation.landscapeRight,
-        DeviceOrientation.landscapeLeft,
-      ],
-      deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
-    )..autoInitialize;
+      widget.chewieCtr.play();
+      widget.chewieCtr.setLooping(true);
+    });
   }
 
   @override
   void dispose() {
     // clean up ChewieController instance
-    _chewieCtr.dispose();
-
-    // Notice!!!
-    // cannot call widget.videoPlayerCtr.dispose
-    // clean up VideoPlayerCtroller instance
-    widget.videoPlayerCtr.dispose();
+    widget.chewieCtr.dispose();
 
     // call parent class clean up at the end -> super.dispose()
     super.dispose();
@@ -69,8 +51,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           log("pressed back button called ...");
 
           // stop chewieController playing state
-          if (_chewieCtr.isPlaying) {
-            await _chewieCtr.pause();
+          if (widget.chewieCtr.isPlaying) {
+            await widget.chewieCtr.pause();
           }
 
           if (!mounted) {
@@ -92,16 +74,19 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   // the VideoPlayerController to finish initializing.
   Widget _getBody(BuildContext context) {
     return FutureBuilder(
-      future: Future.wait([
-        _initializeVideoPlayerFuture,
-        Future.delayed(const Duration(seconds: 2)),
-      ]),
+      future: _future,
       builder: (context, snapshot) {
-        return AspectRatio(
-          aspectRatio: snapshot.connectionState == ConnectionState.done ? _chewieCtr.aspectRatio ?? 16 / 9 : 16 / 9,
-          child:
-              (snapshot.connectionState == ConnectionState.done) ? Chewie(controller: _chewieCtr) : _getStackWidget(),
-        );
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+          case ConnectionState.waiting:
+          case ConnectionState.active:
+            return _getStackWidget();
+          case ConnectionState.done:
+            return AspectRatio(
+              aspectRatio: widget.chewieCtr.aspectRatio ?? 16 / 9,
+              child: Chewie(controller: widget.chewieCtr),
+            );
+        }
       },
     );
   }
@@ -120,13 +105,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _getAspect() {
-    return AspectRatio(
-      aspectRatio: _chewieCtr.aspectRatio ?? 16 / 9,
-      child: Chewie(controller: _chewieCtr),
     );
   }
 }
