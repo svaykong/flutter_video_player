@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:chewie/chewie.dart';
-import 'package:video_player/video_player.dart';
 
 import 'page.dart';
 import '../models/model.dart';
@@ -64,14 +62,6 @@ class _ListVideosPageState extends State<ListVideosPage> {
             return ListView.builder(
                 itemCount: listVideos.length,
                 itemBuilder: ((context, index) {
-                  final chewieCtr = ChewieController(
-                    videoPlayerController: VideoPlayerController.network(listVideos[index].videoURL)..initialize(),
-                    deviceOrientationsOnEnterFullScreen: [
-                      DeviceOrientation.landscapeRight,
-                      DeviceOrientation.landscapeLeft,
-                    ],
-                    deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
-                  )..autoInitialize;
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,7 +91,9 @@ class _ListVideosPageState extends State<ListVideosPage> {
                                           MaterialPageRoute(
                                             builder: (context) => VideoPlayerPage(
                                               video: listVideos[index],
-                                              chewieCtr: chewieCtr,
+                                              chewieCtr: ChewieController(
+                                                videoPlayerController: listVideos[index].videoCtr,
+                                              )..autoInitialize,
                                             ),
                                           ),
                                         )

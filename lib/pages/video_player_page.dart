@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:chewie/chewie.dart';
 
@@ -27,10 +28,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     super.initState();
 
     _future = Future.delayed(const Duration(seconds: 5), () {
-      setState(() {});
-
-      widget.chewieCtr.play();
-      widget.chewieCtr.setLooping(true);
+      widget.chewieCtr.copyWith(
+        autoPlay: true,
+        looping: true,
+        deviceOrientationsOnEnterFullScreen: [
+          DeviceOrientation.landscapeRight,
+          DeviceOrientation.landscapeLeft,
+        ],
+        deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
+      );
     });
   }
 
