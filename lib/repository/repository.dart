@@ -9,7 +9,7 @@ import '../constants.dart';
 class Repository {
   final String _url = 'videos/';
 
-  Future<List<Video>> fetchListVideos({String ip = IP3}) async {
+  Future<List<Video>> fetchListVideos({String ip = IP4}) async {
     // should delayes some seconds
     await Future.delayed(const Duration(milliseconds: 500), () {});
 

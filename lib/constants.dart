@@ -5,7 +5,7 @@ const SHost = 'https://';
 
 // AOS emulator error
 // IOS simulator error
-// Android Real Device erro
+// Android Real Device error
 const String IP = 'localhost';
 
 // AOS emulator work
@@ -19,7 +19,7 @@ const String IP2 = '10.0.2.2';
 // Android Real Device work
 const String IP3 = '192.168.151.253';
 
-const String IP4 = '192.168.1.181';
+const String IP4 = '192.168.173.253';
 
 const String BASE_URL = 'api/v1';
 const PORT = 3001;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:chewie/chewie.dart';
+// import 'package:flutter_video_player_app/constants.dart';
 
 import 'page.dart';
 import '../models/model.dart';
@@ -22,7 +23,7 @@ class _ListVideosPageState extends State<ListVideosPage> {
   late Repository _repository;
   late Future<List<Video>> _fetchVideosFuture;
   List<Video> _listVideos = [];
-
+  
   @override
   void initState() {
     super.initState(); //Super should be called at the very beginning of init
@@ -57,8 +58,10 @@ class _ListVideosPageState extends State<ListVideosPage> {
           case ConnectionState.active:
             return getLoadingWidget();
           case ConnectionState.done:
+            final String messageError = snapshot.error.toString();
             if (snapshot.hasError) {
-              if (snapshot.error.toString().contains("check internet connection")) {
+              if (messageError.contains("check internet connection") ||
+                  messageError.contains("Connection timed out")) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -122,7 +125,8 @@ class _ListVideosPageState extends State<ListVideosPage> {
                                 ),
                                 behavior: SnackBarBehavior.floating,
                                 margin: EdgeInsets.only(
-                                  bottom: MediaQuery.of(context).size.height - 125,
+                                  bottom:
+                                      MediaQuery.of(context).size.height - 125,
                                   right: 20,
                                   left: 20,
                                 ),
@@ -131,7 +135,8 @@ class _ListVideosPageState extends State<ListVideosPage> {
                             // if have try again
                             setState(() {
                               // import call again to make it trigger
-                              _fetchVideosFuture = _repository.fetchListVideos();
+                              _fetchVideosFuture =
+                                  _repository.fetchListVideos();
                             });
                           }
                         },
@@ -188,15 +193,19 @@ class _ListVideosPageState extends State<ListVideosPage> {
                                           builder: (_) => VideoPlayerPage(
                                             video: _listVideos[index],
                                             chewieCtr: ChewieController(
-                                              videoPlayerController: _listVideos[index].videoCtr,
+                                              videoPlayerController:
+                                                  _listVideos[index].videoCtr,
                                               showControlsOnInitialize: false,
                                               autoPlay: true,
                                               looping: true,
                                               deviceOrientationsOnEnterFullScreen: [
-                                                DeviceOrientation.landscapeRight,
+                                                DeviceOrientation
+                                                    .landscapeRight,
                                                 DeviceOrientation.landscapeLeft,
                                               ],
-                                              deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
+                                              deviceOrientationsAfterFullScreen: [
+                                                DeviceOrientation.portraitUp
+                                              ],
                                             )..autoInitialize,
                                           ),
                                         ),
@@ -215,7 +224,8 @@ class _ListVideosPageState extends State<ListVideosPage> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0, left: 8.0, top: 8.0),
+                        padding: const EdgeInsets.only(
+                            bottom: 8.0, left: 8.0, top: 8.0),
                         child: Text(
                           _listVideos[index].title,
                           textAlign: TextAlign.start,
