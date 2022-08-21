@@ -26,13 +26,14 @@ class Video extends Equatable {
   @override
   List<Object?> get props => [id, title, videoURL, imgURL, author];
 
-  factory Video.fromJson(Map<String, dynamic> json) {
-    final videoURL = "$HOST$IP3:$PORT/$BASE_URL${json["video_url"]}";
+  factory Video.fromJson(Map<String, dynamic> json, {ip = IP3}) {
+    final videoURL = "$HOST$ip:$PORT/$BASE_URL${json["video_url"]}";
+    final imgURL = "$HOST$ip:$PORT/$BASE_URL${json["img_url"]}";
     return Video(
       id: json["id"],
       title: json["title"],
       videoURL: videoURL,
-      imgURL: "$HOST$IP3:$PORT/$BASE_URL${json["img_url"]}",
+      imgURL: imgURL,
       author: json["author"],
       videoCtr: VideoPlayerController.network(videoURL)..initialize(),
     );

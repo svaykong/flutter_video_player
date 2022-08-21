@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// import 'dart_programming/dart_syntax/dart_syntax.dart';
-
 import 'pages/home_page.dart';
 
 class RootApp extends StatelessWidget {

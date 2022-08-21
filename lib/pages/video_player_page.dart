@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:chewie/chewie.dart';
 
 import '../models/model.dart';
-import '../utill/custom_extension.dart';
+import '../utill/util.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final Video video;
@@ -24,29 +23,21 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   @override
   void initState() {
-    // call parent class initialize first before others initialize -> super.initState()
-    super.initState();
+    super.initState(); //Super should be called at the very beginning of init
 
-    _future = Future.delayed(const Duration(seconds: 5), () {
-      widget.chewieCtr.copyWith(
-        autoPlay: true,
-        looping: true,
-        deviceOrientationsOnEnterFullScreen: [
-          DeviceOrientation.landscapeRight,
-          DeviceOrientation.landscapeLeft,
-        ],
-        deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
-      );
-    });
+    _future = Future.delayed(const Duration(milliseconds: 500), () {});
   }
 
   @override
   void dispose() {
-    // clean up ChewieController instance
+    // clean up VideoplayerController
+    // cannot called
+    // widget.video.videoCtr.dispose();
+
+    // clean up ChewieController
     widget.chewieCtr.dispose();
 
-    // call parent class clean up at the end -> super.dispose()
-    super.dispose();
+    super.dispose(); //Super should be called at the very end of dispose
   }
 
   @override
@@ -54,11 +45,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     return Scaffold(
       body: WillPopScope(
         onWillPop: () async {
-          log("pressed back button called ...");
+          "pressed back button called in WillPopScope ...".log();
 
           // stop chewieController playing state
           if (widget.chewieCtr.isPlaying) {
             await widget.chewieCtr.pause();
+            await widget.chewieCtr.seekTo(Duration.zero);
           }
 
           if (!mounted) {
@@ -79,26 +71,57 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   // Use a FutureBuilder to display a loading spinner while waiting for
   // the VideoPlayerController to finish initializing.
   Widget _getBody(BuildContext context) {
-    return FutureBuilder(
-      future: _future,
-      builder: (context, snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.none:
-          case ConnectionState.waiting:
-          case ConnectionState.active:
-            return _getStackWidget();
-          case ConnectionState.done:
-            return AspectRatio(
-              aspectRatio: widget.chewieCtr.aspectRatio ?? 16 / 9,
-              child: Chewie(controller: widget.chewieCtr),
-            );
-        }
-      },
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.video.title,
+        ),
+      ),
+      body: FutureBuilder(
+        future: _future,
+        builder: (context, snapshot) {
+          switch (snapshot.connectionState) {
+            case ConnectionState.none:
+            case ConnectionState.waiting:
+            case ConnectionState.active:
+              return _getStackWidget();
+            case ConnectionState.done:
+              return AspectRatio(
+                aspectRatio: widget.chewieCtr.aspectRatio ?? 16 / 9,
+                child: Chewie(controller: widget.chewieCtr),
+              );
+          }
+        },
+      ),
     );
   }
 
+  Widget _showArrowBackIOSWidget() {
+    if (widget.chewieCtr.showControls) {
+      // Arrow Icon Back
+      return IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios,
+          ),
+          onPressed: () async {
+            "pressed back button called in arrow back ios icon ...".log();
+
+            // stop chewieController playing state
+            if (widget.chewieCtr.isPlaying) {
+              await widget.chewieCtr.pause();
+              await widget.chewieCtr.seekTo(Duration.zero);
+            }
+
+            if (!mounted) {}
+
+            Navigator.of(context).pop();
+          });
+    } else {
+      return const SizedBox.shrink();
+    }
+  }
+
   Widget _getStackWidget() {
-    log("_getStackWidget called ...");
     return Stack(
       children: [
         Hero(

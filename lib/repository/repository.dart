@@ -1,16 +1,18 @@
 import 'dart:convert' as json show jsonDecode;
 
-// import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/video_model.dart';
-import '../utill/custom_extension.dart';
+import '../utill/util.dart';
 import '../constants.dart';
 
 class Repository {
   final String _url = 'videos/';
 
-  Future<List<Video>> fetchListVideos() async {
+  Future<List<Video>> fetchListVideos({String ip = IP3}) async {
+    // should delayes some seconds
+    await Future.delayed(const Duration(milliseconds: 500), () {});
+
     // ---  http  -----
     // creating url reference
     Uri uri;
@@ -22,23 +24,36 @@ class Repository {
     http.Response response;
 
     // parsing video url
-    uri = Uri.parse("$HOST$IP3:$PORT/$BASE_URL/$_url");
-    log("uri :: $uri");
+    uri = Uri.parse("$HOST$ip:$PORT/$BASE_URL/$_url");
+    uri.log();
 
-    // making request to the network
-    response = await client.get(uri); // .timeout(const Duration(seconds: 5));
-    log("response body :: ${response.body}");
+    List<Video> listVideos = [];
 
-    if (response.body.contains('"message":"Not found"')) {
-      return Future.error("An error occurred ...");
+    try {
+      // making request to the network
+      response = await client.get(uri);
+      "response body :: ${response.body}".log();
+
+      if (response.body.contains('"message":"Not found"')) {
+        return Future.error("An error occurred ...");
+      }
+      // response body is a response string
+      listVideos = (json.jsonDecode(response.body) as List).map((element) => Video.fromJson(element, ip: ip)).toList();
+      "listVideos :: ${listVideos.length}".log();
+    } catch (error) {
+      "error :: $error".log();
+      if (error.toString().contains('Connection refused')) {
+        return Future.error("Internal Server Error");
+      }
+      if (error.toString().contains("Network is unreachable")) {
+        return Future.error("Please check internet connection");
+      }
+      return Future.error(error);
     }
-    // response body is a response string
-    final listVideos = (json.jsonDecode(response.body) as List).map((element) => Video.fromJson(element)).toList();
-    log("listVideos :: ${listVideos.length}");
-    // ----- http ------
 
+    // ----- http ------
     return listVideos;
-  }  
+  }
 }
 
 //   Future<List<Video>> _fetchVideos() async {
