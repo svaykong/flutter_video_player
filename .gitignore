@@ -51,3 +51,4 @@ app.*.map.json
 lib/utilities/keys.dart
 
 # ignore constants.dart
+lib/constants.dart 
