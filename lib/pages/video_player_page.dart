@@ -25,17 +25,18 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState(); //Super should be called at the very beginning of init
 
-    _future = Future.delayed(const Duration(milliseconds: 500), () {});
+    _future = Future.delayed(const Duration(milliseconds: 500), () {
+      widget.chewieCtr.videoPlayerController.addListener(checkVideo);
+    });
   }
 
   @override
   void dispose() {
-    // clean up VideoplayerController
-    // cannot called
-    // widget.video.videoCtr.dispose();
-
     // clean up ChewieController
     widget.chewieCtr.dispose();
+
+    // remove checkVideo listener
+    widget.chewieCtr.videoPlayerController.removeListener(checkVideo);
 
     super.dispose(); //Super should be called at the very end of dispose
   }
@@ -96,31 +97,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
-  Widget _showArrowBackIOSWidget() {
-    if (widget.chewieCtr.showControls) {
-      // Arrow Icon Back
-      return IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-          ),
-          onPressed: () async {
-            "pressed back button called in arrow back ios icon ...".log();
-
-            // stop chewieController playing state
-            if (widget.chewieCtr.isPlaying) {
-              await widget.chewieCtr.pause();
-              await widget.chewieCtr.seekTo(Duration.zero);
-            }
-
-            if (!mounted) {}
-
-            Navigator.of(context).pop();
-          });
-    } else {
-      return const SizedBox.shrink();
-    }
-  }
-
   Widget _getStackWidget() {
     return Stack(
       children: [
@@ -135,5 +111,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
       ],
     );
+  }
+
+  void checkVideo() {
+    // Implement your calls inside these conditions' bodies :
+    if (widget.chewieCtr.videoPlayerController.value.position == const Duration(seconds: 0, minutes: 0, hours: 0)) {
+      'video Started'.log();
+    }
+
+    
   }
 }

@@ -1,10 +1,7 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:chewie/chewie.dart';
-// import 'package:flutter_video_player_app/constants.dart';
 
 import 'page.dart';
 import '../models/model.dart';
@@ -23,7 +20,7 @@ class _ListVideosPageState extends State<ListVideosPage> {
   late Repository _repository;
   late Future<List<Video>> _fetchVideosFuture;
   List<Video> _listVideos = [];
-  
+
   @override
   void initState() {
     super.initState(); //Super should be called at the very beginning of init
@@ -47,8 +44,6 @@ class _ListVideosPageState extends State<ListVideosPage> {
 
   @override
   Widget build(BuildContext context) {
-    // checkInternetConnect();
-
     return FutureBuilder<List<Video>>(
       future: _fetchVideosFuture,
       builder: ((context, snapshot) {
@@ -58,97 +53,44 @@ class _ListVideosPageState extends State<ListVideosPage> {
           case ConnectionState.active:
             return getLoadingWidget();
           case ConnectionState.done:
-            final String messageError = snapshot.error.toString();
             if (snapshot.hasError) {
-              if (messageError.contains("check internet connection") ||
-                  messageError.contains("Connection timed out")) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Wrap(
-                        direction: Axis.vertical,
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.rotationY(math.pi),
-                            child: const Icon(
-                              Icons.wifi_off,
-                              size: 62,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 30.0,
-                          ),
-                          RichText(
-                            text: const TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: "No internet connetion",
-                                  style: TextStyle(color: Colors.black),
-                                ),
-                                TextSpan(text: "\n\n"),
-                                TextSpan(
-                                  text: "Connect to internet and try again.",
-                                  style: TextStyle(color: Colors.black),
-                                ),
-                              ],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: const Size(200, 40),
+              final messageError = snapshot.error.toString();
+              if (messageError.contains("check internet connection") || messageError.contains("Connection timed out")) {
+                return getSnapshotErrorWidget(context, messageError, () async {
+                  "Retry button click ...".log();
+
+                  // check internet connect first before called retry
+                  bool hasInternet = await checkInternetConnect();
+
+                  if (!mounted) {}
+
+                  // No internet connection alert the snackbar on the top
+                  if (hasInternet == false) {
+                    ScaffoldMessenger.of(context)
+                      ..removeCurrentSnackBar()
+                      ..showSnackBar(SnackBar(
+                        backgroundColor: Colors.black45,
+                        content: const Text(
+                          'No internet connection',
+                          textAlign: TextAlign.center,
                         ),
-                        onPressed: () async {
-                          "Retry button click ...".log();
-
-                          // check internet connect first before called retry
-                          bool hasInternet = await checkInternetConnect();
-
-                          if (!mounted) {}
-
-                          // No internet connection alert the snackbar on the top
-                          if (hasInternet == false) {
-                            ScaffoldMessenger.of(context)
-                              ..removeCurrentSnackBar()
-                              ..showSnackBar(SnackBar(
-                                backgroundColor: Colors.black45,
-                                content: const Text(
-                                  'No internet connection',
-                                  textAlign: TextAlign.center,
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                                margin: EdgeInsets.only(
-                                  bottom:
-                                      MediaQuery.of(context).size.height - 125,
-                                  right: 20,
-                                  left: 20,
-                                ),
-                              ));
-                          } else {
-                            // if have try again
-                            setState(() {
-                              // import call again to make it trigger
-                              _fetchVideosFuture =
-                                  _repository.fetchListVideos();
-                            });
-                          }
-                        },
-                        child: const Text("Retry"),
-                      ),
-                    ],
-                  ),
-                );
+                        behavior: SnackBarBehavior.floating,
+                        margin: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).size.height - 125,
+                          right: 20,
+                          left: 20,
+                        ),
+                      ));
+                  } else {
+                    // if internet has connected try again
+                    setState(() {
+                      // import call again to make it trigger
+                      _fetchVideosFuture = _repository.fetchListVideos();
+                    });
+                  }
+                });
               }
-              return Center(
-                child: Text("${snapshot.error}"),
-              );
+              return getSnapshotErrorWidget(context, messageError, null);
             }
 
             final data = snapshot.data;
@@ -160,89 +102,89 @@ class _ListVideosPageState extends State<ListVideosPage> {
 
             _listVideos = data;
 
-            return ListView.builder(
-                itemCount: _listVideos.length,
-                itemBuilder: ((context, index) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: 200.0,
-                        width: double.infinity,
-                        child: Stack(
-                          children: [
-                            Hero(
-                              tag: _listVideos[index].id,
-                              child: Image.network(
-                                _listVideos[index].imgURL,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned.fill(
-                              child: Align(
-                                alignment: Alignment.center,
-                                child: CircleAvatar(
-                                  radius: 30.0,
-                                  backgroundColor: Colors.black26,
-                                  child: IconButton(
-                                    onPressed: () async {
-                                      await Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => VideoPlayerPage(
-                                            video: _listVideos[index],
-                                            chewieCtr: ChewieController(
-                                              videoPlayerController:
-                                                  _listVideos[index].videoCtr,
-                                              showControlsOnInitialize: false,
-                                              autoPlay: true,
-                                              looping: true,
-                                              deviceOrientationsOnEnterFullScreen: [
-                                                DeviceOrientation
-                                                    .landscapeRight,
-                                                DeviceOrientation.landscapeLeft,
-                                              ],
-                                              deviceOrientationsAfterFullScreen: [
-                                                DeviceOrientation.portraitUp
-                                              ],
-                                            )..autoInitialize,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(
-                                      Icons.play_arrow,
-                                      color: Colors.white,
-                                      size: 30.0,
-                                    ),
-                                  ),
+            return _getListViewBuilder(context, _listVideos);
+        }
+      }),
+    );
+  }
+
+  Widget _getListViewBuilder(BuildContext context, List<Video> videos) {
+    return ListView.builder(
+      itemCount: videos.length,
+      itemBuilder: ((context, index) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 200.0,
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  Hero(
+                    tag: videos[index].id,
+                    child: Image.network(
+                      videos[index].imgURL,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: CircleAvatar(
+                        radius: 30.0,
+                        backgroundColor: Colors.black26,
+                        child: IconButton(
+                          onPressed: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => VideoPlayerPage(
+                                  video: videos[index],
+                                  chewieCtr: ChewieController(
+                                    videoPlayerController: videos[index].videoCtr,
+                                    showControlsOnInitialize: false,
+                                    autoPlay: true,
+                                    looping: true,
+                                    deviceOrientationsOnEnterFullScreen: [
+                                      DeviceOrientation.landscapeRight,
+                                      DeviceOrientation.landscapeLeft,
+                                    ],
+                                    deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
+                                  )..autoInitialize,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                            bottom: 8.0, left: 8.0, top: 8.0),
-                        child: Text(
-                          _listVideos[index].title,
-                          textAlign: TextAlign.start,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.play_arrow,
+                            color: Colors.white,
+                            size: 30.0,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(
-                        height: 10.0,
-                      ),
-                    ],
-                  );
-                }));
-        }
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0, left: 8.0, top: 8.0),
+              child: Text(
+                videos[index].title,
+                textAlign: TextAlign.start,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(
+              height: 10.0,
+            ),
+          ],
+        );
       }),
     );
   }
